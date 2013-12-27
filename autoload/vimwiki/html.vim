@@ -95,6 +95,25 @@ function! s:create_default_CSS(path) " {{{
   endif
 endfunction "}}}
 
+function! s:default_Pygments_full_name(path) " {{{
+  let path = expand(a:path)
+  let pygments_full_name = path.VimwikiGet('pygments_css')
+  return pygments_full_name
+endfunction "}}}
+
+function! s:create_default_Pygments(path) " {{{
+  let pygments_full_name = s:default_Pygments_full_name(a:path)
+  if glob(pygments_full_name) == ""
+    call vimwiki#base#mkdir(fnamemodify(pygments_full_name, ':p:h'))
+    let default_css = s:find_autoload_file('pygments.css')
+    if default_css != ''
+      let lines = readfile(default_css)
+      call writefile(lines, pygments_full_name)
+      echomsg "Default style.css has been created."
+    endif
+  endif
+endfunction "}}}
+
 function! s:template_full_name(name) "{{{
   if a:name == ''
     let name = VimwikiGet('template_default')
@@ -1362,6 +1381,66 @@ function! vimwiki#html#CustomWiki2HTML(path, wikifile, force) "{{{
       \ (len(VimwikiGet('subdir'))           > 0 ? shellescape(s:root_path(VimwikiGet('subdir')), 1)   : '-'))
 endfunction " }}}
 
+function! s:highlight_code_with_pygments(lsource) "{{{
+  if !has('python')
+    return a:lsource
+  endif
+  let s:lsource = deepcopy(a:lsource)
+  let s:content = ''
+python <<EOF
+def handle():
+  import vim
+
+  import re
+  import os
+
+  try:
+    import pygments
+  except ImportError:
+    vim.command("echoerr 'Cannot import pygments library, please install it.'")
+    return
+
+  from pygments.lexers import get_lexer_by_name
+  from pygments.formatters import HtmlFormatter
+  from pygments import highlight
+  from pygments.util import ClassNotFound
+
+  CODE_RE = re.compile(r'\n({{{(\w*?)\s(.*?)\s}}})', re.M|re.U|re.S)
+
+  data = vim.eval("s:lsource")
+  content = "\n".join(data)
+  new = False
+  css_class = vim.eval("VimwikiGet('pygments_class')")
+  for source, lang_type, code in CODE_RE.findall(content):
+    lang_type = lang_type or "text"
+    try:
+      lexer = get_lexer_by_name(lang_type)
+    except ClassNotFound:
+      lexer = get_lexer_by_name("text")
+
+    formatter = HtmlFormatter(encoding="utf8", cssclass=css_class,
+                              noclasses=False, style="default",
+                              linenos = None, nowrap = True)
+
+    hcode = highlight(code, lexer, formatter)
+    content = content.replace(source, hcode)
+    if new is False:
+      new = True
+
+  if new:
+    vim.command("let s:content='%s'" % content.replace("'", "\'"))
+
+handle()
+
+EOF
+
+  if s:content != ''
+    let s:lsource = split(s:content, '\n')
+  endif
+
+  return s:lsource
+endfunction "}}}
+
 function! vimwiki#html#Wiki2HTML(path_html, wikifile) "{{{
 
   let starttime = reltime()  " start the clock
@@ -1381,6 +1460,11 @@ function! vimwiki#html#Wiki2HTML(path_html, wikifile) "{{{
 
   if s:syntax_supported() && done == 0
     let lsource = readfile(wikifile)
+
+    if VimwikiGet("use_pygments")
+      let lsource = s:highlight_code_with_pygments(lsource)
+    endif
+
     let ldest = []
 
     "if g:vimwiki_debug
@@ -1476,10 +1560,16 @@ function! vimwiki#html#Wiki2HTML(path_html, wikifile) "{{{
     call map(html_lines, 'substitute(v:val, "%title%", "'. title .'", "g")')
     call map(html_lines, 'substitute(v:val, "%root_path%", "'.
           \ s:root_path(VimwikiGet('subdir')) .'", "g")')
-
     let css_name = expand(VimwikiGet('css_name'))
     let css_name = substitute(css_name, '\', '/', 'g')
     call map(html_lines, 'substitute(v:val, "%css%", "'. css_name .'", "g")')
+    if (VimwikiGet("use_pygments") == 1)
+      let pygments_css = expand(VimwikiGet("pygments_css"))
+      let pygments_css = substitute(pygments_css, '\', '/', 'g')
+      call map(html_lines, 'substitute(v:val, "%pygments%", "'. pygments_css .'", "g")')
+    else
+      call map(html_lines, 'substitute(v:val, "%pygments%", "", "g")')
+    endif
 
     let enc = &fileencoding
     if enc == ''
@@ -1561,6 +1651,9 @@ function! vimwiki#html#WikiAll2HTML(path_html) "{{{
   call VimwikiSet('invsubdir', current_invsubdir)
 
   call s:create_default_CSS(path_html)
+  if (VimwikiGet("use_pygments") == 1)
+    call s:create_default_Pygments(path_html)
+  endif
   echomsg 'Done!'
 
   let &more = setting_more

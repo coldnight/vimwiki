@@ -376,8 +376,18 @@ let s:vimwiki_defaults.diary_link_fmt = '%Y-%m-%d'
 let s:vimwiki_defaults.custom_wiki2html = ''
 "
 let s:vimwiki_defaults.list_margin = -1
+
+" NEW! in v2.1.1
+let s:vimwiki_defaults.use_pygments = 0
 "}}}
 
+" NEW! in v2.1.1
+let s:vimwiki_defaults.pygments_css = 'pygments.css'
+"}}}
+" NEW! in v2.1.1
+let s:vimwiki_defaults.pygments_class = 'codehilite'
+"}}}
+"
 " DEFAULT options {{{
 call s:default('list', [s:vimwiki_defaults])
 call s:default('auto_checkbox', 1)

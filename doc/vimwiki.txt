@@ -9,7 +9,7 @@
               |___|  |___| |_|   |_||__| |__||___| |___| |_||___|            ~
 
 
-                               Version: 2.1
+                               Version: 2.1.1
 
 ==============================================================================
 CONTENTS                                                    *vimwiki-contents*
@@ -1673,6 +1673,39 @@ is used.  This affects the behavior of the list manipulation commands
 |vimwiki_glstar|, |vimwiki_gl8|, |vimwiki_gl#|, |vimwiki_gl3|,
 |vimwiki_gl-| and |vimwiki_gl1|. 
 
+
+*vimwiki-option-use_pygments*
+------------------------------------------------------------------------------
+Key             Default value~
+use_pygments       0     0,1
+
+Description~
+Use Pygments to highlight the code with Python, if you enabled this,
+your Vim must compile with |+python|  and install the Pygments library.
+And you must set div, span, table, td, pre, tr is valid html tags.
+See |g:vimwiki_valid_html_tags|.
+
+See also: |vimwiki-option-pygments_css|, |vimwiki-option-pygemtns_class|
+
+And you can set Pygments's css file, see |vimiki-option-pygments_css|
+
+*vimwiki-option-pygments_css*
+------------------------------------------------------------------------------
+Key                     Default          value~
+pygments_css           'pygments.css'  css_file_name
+
+Description~
+Set Pygments's css file to custom hight light code.
+You can get the css file from https://github.com/richleland/pygments-css.
+See also: |vimwiki-option-user_pygments|
+
+*vimwiki-option-pygments_class*
+-----------------------------------------------------------------------------
+Key                     Default         value~
+pygments_class          'codehilite'
+
+Description~
+Set Pygments's high light class
 
 
 ------------------------------------------------------------------------------
