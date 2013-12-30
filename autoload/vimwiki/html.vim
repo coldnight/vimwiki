@@ -166,6 +166,9 @@ function! s:safe_html(line) "{{{
   " escape & < > when producing HTML text
   " s:lt_pattern, s:gt_pattern depend on g:vimwiki_valid_html_tags
   " and are set in vimwiki#html#Wiki2HTML()
+  if a:line=~ '^\s*%nowiki'
+    return a:line
+  endif
   let line = substitute(a:line, '&', '\&amp;', 'g')
   let line = substitute(line,s:lt_pattern,'\&lt;', 'g')
   let line = substitute(line,s:gt_pattern,'\&gt;', 'g')
@@ -1193,6 +1196,14 @@ function! s:parse_line(line, state) " {{{
     endif
   endif
   "}}}
+  
+  " nowiki "{{{
+  if !processed
+    if line=~ '^\s*%nowiki'
+      let processed = 1
+      call add(res_lines, substitute(line, '^\s*%nowiki', '', ''))
+    endif
+  endif "}}}
 
   " pres "{{{
   if !processed
@@ -1420,9 +1431,11 @@ def handle():
 
     formatter = HtmlFormatter(encoding="utf8", cssclass=css_class,
                               noclasses=False, style="default",
-                              linenos = None, nowrap = True)
+                              linenos = None)
 
     hcode = highlight(code, lexer, formatter)
+    hcode = "%nowiki" + '\n%nowiki'.join(hcode.split("\n"))
+    content = content.replace(source, hcode)
     content = content.replace(source, hcode)
     if new is False:
       new = True
@@ -1433,7 +1446,6 @@ def handle():
 handle()
 
 EOF
-
   if s:content != ''
     let s:lsource = split(s:content, '\n')
   endif
