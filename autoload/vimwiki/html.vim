@@ -1416,32 +1416,32 @@ def handle():
   from pygments import highlight
   from pygments.util import ClassNotFound
 
-  CODE_RE = re.compile(r'\n({{{(\w*?)\s(.*?)\s}}})', re.M|re.U|re.S)
+  CODE_RE = re.compile(r'({{{\s*(?:(\w*?)|class="brush:\s*(\w*?)")\s(.*?)\s}}})', re.M|re.U|re.S)
 
   data = vim.eval("s:lsource")
   content = "\n".join(data)
   new = False
   css_class = vim.eval("VimwikiGet('pygments_class')")
-  for source, lang_type, code in CODE_RE.findall(content):
-    lang_type = lang_type or "text"
+  for source, lang_type, _lt,  code in CODE_RE.findall(content):
+    lang_type = (lang_type or _lt) or "text"
     try:
       lexer = get_lexer_by_name(lang_type)
     except ClassNotFound:
       lexer = get_lexer_by_name("text")
 
-    formatter = HtmlFormatter(encoding="utf8", cssclass=css_class,
+    formatter = HtmlFormatter(encoding="utf-8", cssclass=css_class,
                               noclasses=False, style="default",
                               linenos = None)
 
-    hcode = highlight(code, lexer, formatter)
+    hcode = highlight(code.decode("utf-8"), lexer, formatter)
     hcode = "%nowiki" + '\n%nowiki'.join(hcode.split("\n"))
-    content = content.replace(source, hcode)
     content = content.replace(source, hcode)
     if new is False:
       new = True
 
   if new:
-    vim.command("let s:content='%s'" % content.replace("'", "\'"))
+    command = "let s:content='"+content.replace("'", "\\'") + "'"
+    vim.command(command)
 
 handle()
 
