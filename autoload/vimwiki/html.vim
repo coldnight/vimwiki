@@ -1440,7 +1440,7 @@ def handle():
       new = True
 
   if new:
-    command = "let s:content='"+content.replace("'", "\\'") + "'"
+    command = 'let s:content="'+content.replace('"', '\\"') + '"'
     vim.command(command)
 
 handle()
